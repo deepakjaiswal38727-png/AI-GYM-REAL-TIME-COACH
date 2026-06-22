@@ -27,11 +27,3 @@ An intelligent, real-time fitness application that uses computer vision to track
 ### 2. Voice Feedback Pipeline
 `Metrics/Form Alert` ➡️ `Voice Processor` ➡️ `Groq LLM Engine` ➡️ `Text-to-Speech Output`
 
----
-
-## 🚀 Setup & Installation
-
-1. **Clone the project:**
-   ```bash
-   git clone [https://github.com/deepakjaiswal38727-png/AI-GYM-REAL-TIME-COACH.git](https://github.com/deepakjaiswal38727-png/AI-GYM-REAL-TIME-COACH.git)
-   cd AI-GYM-REAL-TIME-COACH
