@@ -2,6 +2,7 @@ import streamlit as st
 import os
 import time
 import pandas as pd
+from dotenv import load_dotenv  # Added to load your .env file
 from services.auth.login_wall import render_login_wall
 from services.state.session_defaults import initial_session_defaults
 from services.config.workout_config import EXERCISE_OPTIONS
@@ -16,7 +17,9 @@ from services.coaching.llm import LLMCoach
 from services.coaching.tts import TextToSpeech
 from services.coaching.voice_pipeline import VoicePipeline, autoplay_audio
 
-  
+# Load environment variables from .env right away
+load_dotenv()
+
 def main():
     st.set_page_config(
         page_icon="🏋️‍♀️",
@@ -35,6 +38,7 @@ def main():
 
     initial_session_defaults()
 
+    # Initialize Voice Pipeline with proper error visibility
     if "voice_pipeline" not in st.session_state:
         try:
             api_key = os.environ.get("GROQ_API_KEY", "")
@@ -42,11 +46,15 @@ def main():
             if not api_key and hasattr(st, "secrets") and "GROQ_API_KEY" in st.secrets:
                 api_key = st.secrets["GROQ_API_KEY"]
             
+            if not api_key:
+                st.error("🔑 GROQ_API_KEY is missing! Make sure it is defined in your .env file.")
+            
             groq_client = Groq(api_key=api_key)
             llm_coach = LLMCoach(groq_client)
             tts = TextToSpeech()
             st.session_state.voice_pipeline = VoicePipeline(llm_coach, tts)
         except Exception as e:
+            st.error(f"❌ Voice Pipeline Initialization Failed: {e}")
             st.session_state.voice_pipeline = None
 
     workout_started = st.session_state.get("workout_started", False)
@@ -63,13 +71,10 @@ def main():
 
         if not workout_started:
             plan_exercise = st.selectbox("Exercise", options=EXERCISE_OPTIONS, key="plan_exercise")
-
             plan_sets = st.number_input("Sets", min_value=0, max_value=50, key="plan_sets", step=1)
-
             plan_reps = st.number_input("Reps per Set", min_value=0, max_value=50, key="plan_reps", step=1)
 
             st.markdown("")
-
             start_session_button = st.button("Start Workout", width="stretch", key="start_session_button")
 
             if start_session_button:
@@ -87,7 +92,6 @@ def main():
                         exercise=plan_exercise,
                         metrics={}
                     )
-                    
                     if result:
                         st.session_state.audio_to_play, st.session_state.coach_feedback = result
 
@@ -100,7 +104,6 @@ def main():
             reps = st.session_state.get("reps_per_set")
 
             st.info(f"**{exercise}** -- {sets} Sets / {reps} Reps")
-
             end_session_button = st.button("End Workout", key="end_session_button", width="stretch")
 
             if end_session_button:
@@ -128,7 +131,6 @@ def main():
             target_sets = st.session_state.get("target_sets")
 
             st.subheader("Progress")
-
             st.metric("Total Reps", f"{total_reps}")
             st.metric("Current Set Reps", f"{current_set_reps} / {reps_per_set}")
             st.metric("Sets Completed", f"{sets_completed} / {target_sets}")
@@ -195,7 +197,7 @@ def main():
             </div>
             """,
             unsafe_allow_html=True,
-        )
+            )
     else:
         context = webrtc_streamer(
             key="exercise-analysis",
@@ -218,7 +220,6 @@ def main():
         inject_webrtc_styles()
 
     st.divider()
-
     st.markdown("#### Workout History")
 
     user_id = st.session_state.get("user_id", 0)
@@ -251,7 +252,5 @@ def main():
         else:
             st.info("No workout history found.")
 
-
 if __name__ == "__main__":
     main()
-    
